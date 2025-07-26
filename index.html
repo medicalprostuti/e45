@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "Synonym of 'unwavering' is-",
+          options: {
+            a: "Unreliable",
+            b: "Steady",
+            c: "Urgent",
+            d: "Ensure",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়। বিভিন্ন অনলাইন ডিকশনারি ও শিক্ষামূলক ওয়েবসাইটে এ ধরণের প্রশ্ন পাওয়া যায়।</p><ul><li>'Unwavering' (অটল, অবিচল) অর্থ হলো স্থির, অনড় বা দৃঢ়।</li><li>(A) 'Unreliable' (অবিশ্বাসযোগ্য) অর্থ হলো যা বিশ্বাস করা যায় না।</li><li>(B) 'Steady' (স্থির, অবিচল) অর্থ হলো দৃঢ় বা অবিচ্ছিন্ন। এটি 'unwavering' এর সমার্থক শব্দ।</li><li>(C) 'Urgent' (জরুরি) অর্থ হলো তাৎক্ষণিক বা অত্যাবশ্যক।</li><li>(D) 'Ensure' (নিশ্চিত করা) একটি verb, যার অর্থ হলো নিশ্চিত করা।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "The antonym of 'well mannered' is",
+          options: {
+            a: "Decorous",
+            b: "Courteous",
+            c: "Chivalrous",
+            d: "Sassy",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Well-mannered' (সু-আচারী) অর্থ হলো ভদ্র, মার্জিত বা শিষ্ট।</li><li>(A) 'Decorous' (ভদ্র, শোভন) হলো 'well-mannered' এর সমার্থক।</li><li>(B) 'Courteous' (বিনয়ী, শিষ্ট) হলো 'well-mannered' এর সমার্থক।</li><li>(C) 'Chivalrous' (সাহসী ও ভদ্র) হলো 'well-mannered' এর কাছাকাছি অর্থ।</li><li>(D) 'Sassy' (বেয়াদব, উদ্ধত, মুখরা) হলো 'well-mannered' এর বিপরীত।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "An antonym for 'Smart' is-",
+          options: {
+            a: "Irrelevant",
+            b: "Boring",
+            c: "Stupid",
+            d: "Difficult",
+          },
+          correct: "c",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Smart' (বুদ্ধিমান, চালাক) অর্থ হলো চতুর বা বুদ্ধিমান।</li><li>(A) 'Irrelevant' (অপ্রাসঙ্গিক) অর্থ হলো যা সম্পর্কিত নয়।</li><li>(B) 'Boring' (বিরক্তিকর) অর্থ হলো যা একঘেয়ে।</li><li>(C) 'Stupid' (বোকা) অর্থ হলো নির্বোধ বা বুদ্ধিহীন। এটি 'Smart' এর বিপরীত।</li><li>(D) 'Difficult' (কঠিন) অর্থ হলো যা সহজে করা যায় না।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "A synonym for 'Synergy' is-",
+          options: {
+            a: "Conflict",
+            b: "Autonomy",
+            c: "Antagonism",
+            d: "Alliance",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Synergy' (সমন্বিত উদ্যোগ, সম্মিলিত শক্তি) অর্থ হলো সম্মিলিত প্রচেষ্টার মাধ্যমে অর্জিত ফল, যেখানে সম্মিলিত ফলাফল পৃথক ফলাফলের চেয়ে বেশি হয়।</li><li>(A) 'Conflict' (বিরোধ) অর্থ হলো মতের অমিল বা ঝগড়া।</li><li>(B) 'Autonomy' (স্বায়ত্তশাসন) অর্থ হলো স্ব-শাসন বা স্বাধীনতা।</li><li>(C) 'Antagonism' (বিরোধিতা) অর্থ হলো শত্রুতা বা বিরোধিতা।</li><li>(D) 'Alliance' (জোট) অর্থ হলো চুক্তি বা সম্মিলন। এটি 'Synergy' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "\"Termination' means-",
+          options: {
+            a: "To start",
+            b: "To begin",
+            c: "To continue",
+            d: "To end",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Termination' (সমাপ্তি) অর্থ হলো শেষ করা বা সমাপ্তি ঘটানো।</li><li>(A) 'To start' (শুরু করা) অর্থ হলো কোনো কিছু আরম্ভ করা।</li><li>(B) 'To begin' (শুরু করা) অর্থ হলো কোনো কিছু আরম্ভ করা।</li><li>(C) 'To continue' (চালিয়ে যাওয়া) অর্থ হলো কোনো কিছু অব্যাহত রাখা।</li><li>(D) 'To end' (শেষ করা) অর্থ হলো কোনো কিছু সমাপ্ত করা। এটি 'Termination' এর সঠিক অর্থ।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "Antonym of the word 'Urbane' is-",
+          options: {
+            a: "Rural",
+            b: "Shave",
+            c: "Sophisticated",
+            d: "Uncouth",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Urbane' (মার্জিত, ভদ্র) অর্থ হলো নগরসুলভ রুচি সম্পন্ন, মার্জিত বা সুশীল।</li><li>(A) 'Rural' (গ্রামীণ) অর্থ হলো গ্রাম সম্পর্কিত। এটি প্রত্যক্ষ বিপরীত নয়।</li><li>(B) 'Shave' (দাড়ি কামানো) একটি verb।</li><li>(C) 'Sophisticated' (পরিশীলিত, জটিল) অর্থ হলো উন্নত বা জটিল। এটি 'Urbane' এর সমার্থক।</li><li>(D) 'Uncouth' (অমার্জিত, অভদ্র) অর্থ হলো অরুচিকর বা অভদ্র। এটি 'Urbane' এর বিপরীত।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "The synonym of 'trivial'-",
+          options: {
+            a: "unbelievable",
+            b: "insignificant",
+            c: "uncertain",
+            d: "intellectual",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Trivial' (তুচ্ছ, নগন্য) অর্থ হলো গুরুত্বহীন বা সামান্য।</li><li>(A) 'Unbelievable' (অবিশ্বাস্য) অর্থ হলো যা বিশ্বাস করা যায় না।</li><li>(B) 'Insignificant' (গুরুত্বহীন) অর্থ হলো তুচ্ছ বা নগন্য। এটি 'Trivial' এর সমার্থক।</li><li>(C) 'Uncertain' (অনিশ্চিত) অর্থ হলো যা স্থির নয়।</li><li>(D) 'Intellectual' (বুদ্ধিজীবী) অর্থ হলো বুদ্ধি সম্পর্কিত বা বুদ্ধিমান ব্যক্তি।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "Choose the correct antonym of the word 'Solidarity'.",
+          options: {
+            a: "Empathy",
+            b: "Hostility",
+            c: "Affinity",
+            d: "Rapport",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Solidarity' (ঐক্য, সংহতি) অর্থ হলো একতা বা সংহতি।</li><li>(A) 'Empathy' (সহানুভূতি) অর্থ হলো অন্যের অনুভূতি বোঝার ক্ষমতা।</li><li>(B) 'Hostility' (শত্রুতা, বিরোধিতা) অর্থ হলো শত্রুভাবাপন্নতা বা বিরোধিতা। এটি 'Solidarity' এর বিপরীত।</li><li>(C) 'Affinity' (ঘনিষ্ঠতা) অর্থ হলো আকর্ষণ বা সাদৃশ্য।</li><li>(D) 'Rapport' (সদ্ভাব) অর্থ হলো পারস্পরিক বোঝাপড়া বা সম্পর্ক।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "Antonym for the word 'Strict' is-",
+          options: {
+            a: "Sly",
+            b: "Strong",
+            c: "Lenient",
+            d: "Weak",
+          },
+          correct: "c",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Strict' (কঠোর, কড়া) অর্থ হলো কঠোর বা অনমনীয়।</li><li>(A) 'Sly' (ধূর্ত, চালাক) অর্থ হলো চতুর বা শঠ।</li><li>(B) 'Strong' (শক্তিশালী) অর্থ হলো বলবান বা দৃঢ়।</li><li>(C) 'Lenient' (নরম, উদার) অর্থ হলো কোমল বা উদার। এটি 'Strict' এর বিপরীত।</li><li>(D) 'Weak' (দুর্বল) অর্থ হলো ক্ষমতাহীন বা ক্ষীণ।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "Antonym of 'Sluggish' is -",
+          options: {
+            a: "Somnolent",
+            b: "Enervated",
+            c: "Brisk",
+            d: "Weary",
+          },
+          correct: "c",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Sluggish' (ধীর, অলস) অর্থ হলো মন্থর বা অলস।</li><li>(A) 'Somnolent' (ঘুমন্ত, তন্দ্রাচ্ছন্ন) অর্থ হলো ঘুমিয়ে থাকা বা ঘুম ঘুম ভাব।</li><li>(B) 'Enervated' (শক্তিহীন, দুর্বল) অর্থ হলো দুর্বল বা অবসাদগ্রস্ত।</li><li>(C) 'Brisk' (দ্রুত, চটপটে) অর্থ হলো দ্রুত বা প্রাণবন্ত। এটি 'Sluggish' এর বিপরীত।</li><li>(D) 'Weary' (ক্লান্ত) অর্থ হলো অবসন্ন বা শ্রান্ত।</li></ul>",
+        },
+        {
+          id: 11,
+          question: "Which pair of words is synonymous?",
+          options: {
+            a: "adultration, adulthood",
+            b: "obsolete, absolute",
+            c: "uncouth, uncivilized",
+            d: "outset, setting out",
+          },
+          correct: "c",
+          explanation:
+            "<p>Synonymous মানে হল সমার্থক শব্দ। অর্থাৎ, যে দুটি শব্দের অর্থ একই বা খুব কাছাকাছি।</p><ul><li>(A) 'Adulteration' (ভেজাল) অর্থ হলো কোনো কিছুর সাথে খারাপ কিছু মেশানো। 'Adulthood' (প্রাপ্তবয়স্কতা) অর্থ হলো প্রাপ্তবয়স্ক হওয়ার অবস্থা। এই দুটি শব্দের অর্থ ভিন্ন।</li><li>(B) 'Obsolete' (अप्रচলিত) অর্থ হলো যা এখন আর ব্যবহৃত হয় না। 'Absolute' (পরম, সম্পূর্ণ) অর্থ হলো চূড়ান্ত বা শর্তহীন। এই দুটি শব্দের অর্থ ভিন্ন।</li><li>(C) 'Uncouth' (অমার্জিত, অভদ্র) অর্থ হলো অশিষ্ট বা রুচিহীন। 'Uncivilized' (অসভ্য, অমার্জিত) অর্থ হলো অসভ্য বা অভদ্র। এই দুটি শব্দের অর্থ একই বা খুব কাছাকাছি, তাই এরা সমার্থক।</li><li>(D) 'Outset' (শুরু) অর্থ হলো কোনো কিছুর আরম্ভ। 'Setting out' (যাত্রা শুরু করা) একটি phrasal verb, যার অর্থ যাত্রা শুরু করা। যদিও উভয়ের মধ্যে শুরুর ধারণা আছে, কিন্তু 'outset' একটি noun এবং 'setting out' একটি verb phrase, এবং তাদের ব্যবহারের প্রেক্ষাপট ভিন্ন হতে পারে। 'Uncouth' এবং 'uncivilized' এর সমার্থক সম্পর্ক আরও সরাসরি।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "Trust Antonym?",
+          options: {
+            a: "Insolent",
+            b: "Doubt",
+            c: "Hostile",
+            d: "Believe",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Trust' (বিশ্বাস) অর্থ হলো আস্থা বা ভরসা।</li><li>(A) 'Insolent' (অহংকারী) অর্থ হলো বেয়াদব বা উদ্ধত।</li><li>(B) 'Doubt' (সন্দেহ) অর্থ হলো অনিশ্চয়তা বা অবিশ্বাস। এটি 'Trust' এর বিপরীত।</li><li>(C) 'Hostile' (শত্রুভাবাপন্ন) অর্থ হলো বৈরী বা প্রতিকূল।</li><li>(D) 'Believe' (বিশ্বাস করা) একটি verb, যা 'Trust' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "Synonym of the word 'Sequel' is-",
+          options: {
+            a: "Continuance",
+            b: "Prologue",
+            c: "Preamble",
+            d: "Prelude",
+          },
+          correct: "a",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Sequel' (পরবর্তী অংশ) অর্থ হলো কোনো ঘটনা, বই বা চলচ্চিত্রের পরবর্তী অংশ বা ধারাবাহিকতা।</li><li>(A) 'Continuance' (ধারাবাহিকতা) অর্থ হলো অবিরাম চলা বা অব্যাহত রাখা। এটি 'Sequel' এর সমার্থক।</li><li>(B) 'Prologue' (ভূমিকা) অর্থ হলো কোনো নাটক বা বইয়ের প্রারম্ভিক অংশ।</li><li>(C) 'Preamble' (ভূমিকা) অর্থ হলো কোনো আইন বা দলিলে মূল বিষয় শুরুর আগে দেওয়া সংক্ষিপ্ত পরিচিতি।</li><li>(D) 'Prelude' (প্রস্তাবনা) অর্থ হলো কোনো প্রধান ঘটনার আগে ঘটে যাওয়া ঘটনা বা কোনো গানের প্রারম্ভিক সুর।</li></ul>",
+        },
+        {
+          id: 14,
+          question:
+            'Choose the alternative that is almost similar to the meaning to the word "Unequivocal".',
+          options: {
+            a: "Not protesting",
+            b: "Low voice",
+            c: "Unequal",
+            d: "Clear",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Unequivocal' (দ্ব্যর্থহীন, সুস্পষ্ট) অর্থ হলো স্পষ্ট, অস্পষ্টতাহীন বা দ্ব্যর্থহীন।</li><li>(A) 'Not protesting' (প্রতিবাদ না করা) অর্থ হলো কোনো বিরোধিতা না করা।</li><li>(B) 'Low voice' (নিচু স্বর) অর্থ হলো মৃদু স্বরে কথা বলা।</li><li>(C) 'Unequal' (অসমান) অর্থ হলো যা সমান নয়।</li><li>(D) 'Clear' (স্পষ্ট) অর্থ হলো পরিষ্কার বা বোধগম্য। এটি 'Unequivocal' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "Which of the following is not a synonym for 'speculate'?",
+          options: {
+            a: "guess",
+            b: "figure out",
+            c: "wonder",
+            d: "abstain",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Speculate' (অনুমান করা, জল্পনা করা) অর্থ হলো কোনো কিছু সম্পর্কে অনুমান করা বা ভাবনা-চিন্তা করা।</li><li>(A) 'Guess' (অনুমান করা) হলো 'speculate' এর সমার্থক।</li><li>(B) 'Figure out' (বুঝতে পারা, সমাধান করা) এর একটি অর্থ হলো অনুমান করে কোনো কিছু বোঝা। এটি 'speculate' এর কাছাকাছি অর্থ।</li><li>(C) 'Wonder' (আশ্চর্য হওয়া, জানতে চাওয়া) এর একটি অর্থ হলো কোনো কিছু সম্পর্কে জানতে আগ্রহী হওয়া বা অনুমান করা। এটি 'speculate' এর কাছাকাছি অর্থ।</li><li>(D) 'Abstain' (বিরত থাকা) অর্থ হলো কোনো কিছু থেকে বিরত থাকা বা নিজেকে দূরে রাখা। এটি 'speculate' এর বিপরীত অর্থ প্রকাশ করে, তাই এটি সমার্থক নয়।</li></ul>",
+        },
+        {
+          id: 16,
+          question: "The correct antonym of 'Spurious' is-",
+          options: {
+            a: "cautious",
+            b: "fantastic",
+            c: "modest",
+            d: "genuine",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Spurious' (নকল, জাল) অর্থ হলো কৃত্রিম বা ভুয়া।</li><li>(A) 'Cautious' (সতর্ক) অর্থ হলো সাবধানী।</li><li>(B) 'Fantastic' (অসাধারণ, চমত্কার) অর্থ হলো কল্পিত বা অবিশ্বাস্য।</li><li>(C) 'Modest' (বিনয়ী, পরিমিত) অর্থ হলো নম্র বা সংযত।</li><li>(D) 'Genuine' (আসল, খাঁটি) অর্থ হলো আসল বা প্রামাণ্য। এটি 'Spurious' এর বিপরীত।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "The synonym of 'Tranquil' is -",
+          options: {
+            a: "Gusty",
+            b: "Hostile",
+            c: "Peace",
+            d: "Calm",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Tranquil' (শান্ত, নিরিবিলি) অর্থ হলো শান্ত, স্থির বা নিরিবিলি।</li><li>(A) 'Gusty' (ঝড়ো) অর্থ হলো ঝড়ো বাতাসপূর্ণ।</li><li>(B) 'Hostile' (শত্রুভাবাপন্ন) অর্থ হলো বৈরী।</li><li>(C) 'Peace' (শান্তি) একটি noun, যার অর্থ হলো শান্তি বা নিস্তব্ধতা। যদিও এর অর্থ কাছাকাছি, 'Tranquil' একটি adjective।</li><li>(D) 'Calm' (শান্ত) অর্থ হলো স্থির বা নিরিবিলি। এটি 'Tranquil' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 18,
+          question: "Antonym of the word 'Turbulence' is-",
+          options: {
+            a: "Disorder",
+            b: "Tranquility",
+            c: "Disturbance",
+            d: "Rupture",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Turbulence' (অশান্তি, গোলযোগ) অর্থ হলো অশান্ত অবস্থা বা গোলযোগ।</li><li>(A) 'Disorder' (বিশৃঙ্খলতা) অর্থ হলো বিশৃঙ্খলা। এটি 'Turbulence' এর সমার্থক।</li><li>(B) 'Tranquility' (শান্তি, স্থিরতা) অর্থ হলো শান্তি বা স্থিরতা। এটি 'Turbulence' এর বিপরীত।</li><li>(C) 'Disturbance' (বিশৃঙ্খলা, উপদ্রব) অর্থ হলো গোলযোগ বা ব্যাঘাত। এটি 'Turbulence' এর সমার্থক।</li><li>(D) 'Rupture' (বিচ্ছেদ, ফাটল) অর্থ হলো ফেটে যাওয়া বা ছিন্নভিন্ন হওয়া।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "Synonym of the word 'Tenacious' is-",
+          options: {
+            a: "Patient",
+            b: "Hard-working",
+            c: "Firm",
+            d: "Slippery",
+          },
+          correct: "c",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Tenacious' (দৃঢ়, অটল) অর্থ হলো দৃঢ়, দৃঢ়সংকল্প বা আঁকড়ে ধরে থাকা।</li><li>(A) 'Patient' (ধৈর্যশীল) অর্থ হলো ধৈর্য ধারণকারী।</li><li>(B) 'Hard-working' (পরিশ্রমী) অর্থ হলো কঠোর পরিশ্রমী।</li><li>(C) 'Firm' (দৃঢ়) অর্থ হলো অটল বা অবিচল। এটি 'Tenacious' এর সমার্থক।</li><li>(D) 'Slippery' (পিচ্ছিল) অর্থ হলো মসৃণ বা অস্থিতিশীল।</li></ul>",
+        },
+        {
+          id: 20,
+          question:
+            "The Taka has dropped by three poisha against the dollar after being steady against the greenback for more than eight months.",
+          options: {
+            a: "strong",
+            b: "stable",
+            c: "fixed",
+            d: "certain",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রদত্ত বাক্যটিতে 'steady' শব্দটি ডলারের বিপরীতে টাকার স্থিতিশীল অবস্থা বোঝাতে ব্যবহৃত হয়েছে। এই প্রসঙ্গে এর অর্থ জানতে হবে।</p><ul><li>(A) 'Strong' (শক্তিশালী) অর্থ হলো শক্তিশালী বা মজবুত।</li><li>(B) 'Stable' (স্থিতিশীল) অর্থ হলো সুস্থিত বা অপরিবর্তনীয়। এটি 'steady' এর সবচেয়ে উপযুক্ত সমার্থক শব্দ এই প্রেক্ষাপটে।</li><li>(C) 'Fixed' (স্থির) অর্থ হলো নির্দিষ্ট বা অপরিবর্তিত। এটি কাছাকাছি হলেও, 'stable' বেশি প্রযোজ্য মুদ্রা বিনিময়ের ক্ষেত্রে।</li><li>(D) 'Certain' (নিশ্চিত) অর্থ হলো নিশ্চিত বা সন্দেহাতীত।</li></ul>",
+        },
+        {
+          id: 21,
+          question: "The antonym of 'sporadic' is -",
+          options: {
+            a: "Occasional",
+            b: "Intermittent",
+            c: "Frequent",
+            d: "Isolated",
+          },
+          correct: "c",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Sporadic' (অনিয়মিত, বিক্ষিপ্ত) অর্থ হলো অনিয়মিত বা বিচ্ছিন্নভাবে ঘটে যাওয়া।</li><li>(A) 'Occasional' (মাঝে মাঝে) অর্থ হলো মাঝে মাঝে বা অনিয়মিত। এটি 'Sporadic' এর সমার্থক।</li><li>(B) 'Intermittent' (বিরতিহীন) অর্থ হলো থেমে থেমে বা অনিয়মিত। এটি 'Sporadic' এর সমার্থক।</li><li>(C) 'Frequent' (ঘন ঘন) অর্থ হলো প্রায়শই বা নিয়মিতভাবে ঘটে যাওয়া। এটি 'Sporadic' এর বিপরীত।</li><li>(D) 'Isolated' (বিচ্ছিন্ন) অর্থ হলো পৃথক বা একা।</li></ul>",
+        },
+        {
+          id: 22,
+          question: "What is the synonym of the word 'Tacit'?",
+          options: {
+            a: "Spoken",
+            b: "Implicit",
+            c: "Open",
+            d: "Written",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Tacit' (নীরব, অনুচ্চারিত) অর্থ হলো অনুচ্চারিত, নীরবে বোঝা বা অনুমান করা।</li><li>(A) 'Spoken' (কথিত) অর্থ হলো মুখ দিয়ে বলা হয়েছে এমন।</li><li>(B) 'Implicit' (অন্তর্নিহিত, পরোক্ষ) অর্থ হলো যা স্পষ্টভাবে বলা হয়নি কিন্তু বোঝা যায়। এটি 'Tacit' এর সমার্থক।</li><li>(C) 'Open' (খোলা, স্পষ্ট) অর্থ হলো উন্মুক্ত বা স্পষ্ট।</li><li>(D) 'Written' (লিখিত) অর্থ হলো যা লেখা হয়েছে।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "Choose the antonym of 'Stubborn'-",
+          options: {
+            a: "Wilful",
+            b: "Obstinate",
+            c: "Inflexible",
+            d: "Compliant",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Stubborn' (একগুঁয়ে, জেদি) অর্থ হলো জেদি বা অনমনীয়।</li><li>(A) 'Wilful' (স্বেচ্ছাচারী, জেদি) অর্থ হলো জেদি বা ইচ্ছাকৃত। এটি 'Stubborn' এর সমার্থক।</li><li>(B) 'Obstinate' (জেদি, একগুঁয়ে) অর্থ হলো একগুঁয়ে বা অনমনীয়। এটি 'Stubborn' এর সমার্থক।</li><li>(C) 'Inflexible' (অনমনীয়) অর্থ হলো যা বাঁকানো যায় না বা পরিবর্তন করা যায় না। এটি 'Stubborn' এর সমার্থক।</li><li>(D) 'Compliant' (আনুগত্যশীল, বাধ্য) অর্থ হলো বাধ্য বা অনুগত। এটি 'Stubborn' এর বিপরীত।</li></ul>",
+        },
+        {
+          id: 24,
+          question: "The proposal was tentative means, the proposal was-",
+          options: {
+            a: "conclusive",
+            b: "indefinite",
+            c: "definite",
+            d: "timely",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Tentative' (অনিশ্চিত, পরীক্ষামূলক) অর্থ হলো পরীক্ষামূলক, চূড়ান্ত নয় বা অনিশ্চিত।</li><li>(A) 'Conclusive' (চূড়ান্ত, নিষ্পত্তিমূলক) অর্থ হলো চূড়ান্ত বা সিদ্ধান্তমূলক।</li><li>(B) 'Indefinite' (অনির্দিষ্ট, অস্পষ্ট) অর্থ হলো অস্পষ্ট বা অনির্দিষ্ট। এটি 'Tentative' এর সঠিক অর্থ।</li><li>(C) 'Definite' (নির্দিষ্ট, সুনির্দিষ্ট) অর্থ হলো স্পষ্ট বা সুনির্দিষ্ট।</li><li>(D) 'Timely' (সময়োপযোগী) অর্থ হলো সময়মতো বা উপযুক্ত সময়ে।</li></ul>",
+        },
+        {
+          id: 25,
+          question: "Shabby means-",
+          options: {
+            a: "Smart",
+            b: "Fair",
+            c: "Unsmart",
+            d: "Honourable",
+          },
+          correct: "c",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Shabby' (জীর্ণ, পুরানো) অর্থ হলো পুরানো, জীর্ণ বা খারাপভাবে পোশাক পরা।</li><li>(A) 'Smart' (বুদ্ধিমান, মার্জিত) অর্থ হলো চতুর বা মার্জিত।</li><li>(B) 'Fair' (ন্যায্য, সুন্দর) অর্থ হলো সুন্দর বা নিরপেক্ষ।</li><li>(C) 'Unsmart' (অপরিষ্কার, অমার্জিত) অর্থ হলো অপরিষ্কার বা বুদ্ধিমান নয়। এটি 'Shabby' এর একটি সঠিক অর্থ।</li><li>(D) 'Honourable' (সম্মানিত) অর্থ হলো সম্মানজনক।</li></ul>",
+        },
+        {
+          id: 26,
+          question: "'Subterfuge' means-",
+          options: {
+            a: "Subtlety",
+            b: "Cunning",
+            c: "Simplicity",
+            d: "Trickery",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Subterfuge' (ছলনা, কৌশল) অর্থ হলো কৌশল বা চাতুরি যা কাউকে ঠকাতে বা উদ্দেশ্য হাসিল করতে ব্যবহৃত হয়।</li><li>(A) 'Subtlety' (সূক্ষ্মতা) অর্থ হলো সূক্ষ্ম বা নিগূঢ়তা।</li><li>(B) 'Cunning' (ধূর্ততা) অর্থ হলো চালাকি বা শঠতা। এটি 'Subterfuge' এর কাছাকাছি অর্থ, তবে 'trickery' আরও সরাসরি।</li><li>(C) 'Simplicity' (সরলতা) অর্থ হলো সহজতা বা সরলতা।</li><li>(D) 'Trickery' (প্রতারণা, কৌশল) অর্থ হলো প্রতারণা বা ছলনা। এটি 'Subterfuge' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 27,
+          question: "'Squander' means -",
+          options: {
+            a: "improve",
+            b: "solve",
+            c: "travel",
+            d: "waste",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Squander' (অপচয় করা, নষ্ট করা) অর্থ হলো অপচয় করা বা অযথা ব্যয় করা।</li><li>(A) 'Improve' (উন্নত করা) অর্থ হলো উন্নতি সাধন করা।</li><li>(B) 'Solve' (সমাধান করা) অর্থ হলো কোনো সমস্যার সমাধান করা।</li><li>(C) 'Travel' (ভ্রমণ করা) অর্থ হলো এক স্থান থেকে অন্য স্থানে যাওয়া।</li><li>(D) 'Waste' (অপচয় করা) অর্থ হলো অযথা ব্যয় করা বা নষ্ট করা। এটি 'Squander' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 28,
+          question:
+            "Choose the correct meaning of the underlined expression: Psychiatrist encourage their patients not to get upset about trivial matters.",
+          options: {
+            a: "unexpected",
+            b: "unusual",
+            c: "unimportant",
+            d: "uncertain",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রদত্ত বাক্যে 'trivial matters' (তুচ্ছ বিষয়) অভিব্যক্তিটির অর্থ জানতে হবে।</p><ul><li>'Trivial' (তুচ্ছ, নগন্য) অর্থ হলো গুরুত্বহীন বা সামান্য।</li><li>(A) 'Unexpected' (অপ্রত্যাশিত) অর্থ হলো যা আশা করা হয়নি।</li><li>(B) 'Unusual' (অস্বাভাবিক) অর্থ হলো যা সাধারণ নয়।</li><li>(C) 'Unimportant' (গুরুত্বহীন) অর্থ হলো যা গুরুত্বপূর্ণ নয়। এটি 'trivial' এর সঠিক অর্থ।</li><li>(D) 'Uncertain' (অনিশ্চিত) অর্থ হলো যা স্থির নয়।</li></ul>",
+        },
+        {
+          id: 29,
+          question: 'Which one is the correct synonym for "Subterfuge"?',
+          options: {
+            a: "Evasion",
+            b: "Settle down",
+            c: "Come up",
+            d: "Small waterflow",
+          },
+          correct: "a",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Subterfuge' (ছলনা, কৌশল) অর্থ হলো কৌশল বা চাতুরি যা কাউকে ঠকাতে বা উদ্দেশ্য হাসিল করতে ব্যবহৃত হয়।</li><li>(A) 'Evasion' (এড়ানো, ছলনা) অর্থ হলো কৌশলে কোনো কিছু এড়িয়ে যাওয়া বা প্রতারণা করা। এটি 'Subterfuge' এর সমার্থক।</li><li>(B) 'Settle down' (স্থির হওয়া, বসতি স্থাপন করা) একটি phrasal verb, যার অর্থ হলো থিতু হওয়া বা শান্ত হওয়া।</li><li>(C) 'Come up' (ওঠা, আবির্ভূত হওয়া) একটি phrasal verb, যার অর্থ হলো আবির্ভূত হওয়া বা উদয় হওয়া।</li><li>(D) 'Small waterflow' (ছোট জলপ্রবাহ) একটি noun phrase, যার অর্থ হলো ছোট পানির ধারা।</li></ul>",
+        },
+        {
+          id: 30,
+          question: "A synonym of sanguine is-",
+          options: {
+            a: "optimistic",
+            b: "pessimistic",
+            c: "gloomy",
+            d: "pale",
+          },
+          correct: "a",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Sanguine' (আশাবাদী) অর্থ হলো আশাবাদী বা আত্মবিশ্বাসী।</li><li>(A) 'Optimistic' (আশাবাদী) অর্থ হলো ইতিবাচক মনোভাব সম্পন্ন। এটি 'Sanguine' এর সমার্থক।</li><li>(B) 'Pessimistic' (নিরাশাবাদী) অর্থ হলো নেতিবাচক মনোভাব সম্পন্ন।</li><li>(C) 'Gloomy' (বিষণ্ণ, অন্ধকারাচ্ছন্ন) অর্থ হলো অন্ধকারাচ্ছন্ন বা হতাশাজনক।</li><li>(D) 'Pale' (ফ্যাকাসে) অর্থ হলো বিবর্ণ বা ফ্যাকাশে।</li></ul>",
+        },
+        {
+          id: 31,
+          question:
+            "Which of the following is the appropriate meaning of 'spring' in the context of the extract?",
+          options: {
+            a: "Season",
+            b: "Joy",
+            c: "Delicacy",
+            d: "Solid",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রদত্ত প্রশ্নটিতে কোনো 'extract' বা উদ্ধৃতি দেওয়া হয়নি, তাই 'spring' শব্দের প্রেক্ষাপট বোঝা যাচ্ছে না। তবে, যদি 'spring' বলতে কোনো খাবার বা পণ্যের গুণগত মান বোঝানো হয়, তাহলে 'Delicacy' (সুস্বাদুতা, সূক্ষ্মতা) একটি সম্ভাব্য অর্থ হতে পারে। কিন্তু সাধারণ অর্থে 'spring' এর বিভিন্ন অর্থ রয়েছে। এখানে, ধরে নেওয়া হচ্ছে যে, এটি একটি ভুল প্রশ্ন কারণ extract দেওয়া হয়নি। যদি প্রশ্নটি একটি নির্দিষ্ট টেক্সট থেকে আসে, তাহলে সেই টেক্সটের প্রেক্ষাপটে 'spring' এর অর্থ ভিন্ন হতে পারে। যেহেতু একটি উত্তর বেছে নিতে বলা হয়েছে, এবং অন্যান্য অপশনগুলি খুব সাধারণ অর্থ প্রকাশ করে, তাই 'Delicacy' (যদি এটি কোনো খাবার বা পণ্যের গুণগত মান বোঝায়) একটি সম্ভাব্য উপযুক্ত অর্থ হতে পারে, যদিও এটি 'spring' এর সরাসরি অর্থ নয়। যদি এই প্রশ্নটি একটি ভিন্ন প্রেক্ষাপটে আসে, তবে উত্তর পরিবর্তিত হতে পারে।</p>",
+        },
+        {
+          id: 32,
+          question: "Choose an antonym of 'stubborn':",
+          options: {
+            a: "Willful",
+            b: "Obstinate",
+            c: "Inflexible",
+            d: "Compliant",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Stubborn' (একগুঁয়ে, জেদি) অর্থ হলো জেদি বা অনমনীয়।</li><li>(A) 'Willful' (স্বেচ্ছাচারী, জেদি) অর্থ হলো জেদি বা ইচ্ছাকৃত। এটি 'Stubborn' এর সমার্থক।</li><li>(B) 'Obstinate' (জেদি, একগুঁয়ে) অর্থ হলো একগুঁয়ে বা অনমনীয়। এটি 'Stubborn' এর সমার্থক।</li><li>(C) 'Inflexible' (অনমনীয়) অর্থ হলো যা বাঁকানো যায় না বা পরিবর্তন করা যায় না। এটি 'Stubborn' এর সমার্থক।</li><li>(D) 'Compliant' (আনুগত্যশীল, বাধ্য) অর্থ হলো বাধ্য বা অনুগত। এটি 'Stubborn' এর বিপরীত।</li></ul>",
+        },
+        {
+          id: 33,
+          question: "'To scowl' is to-",
+          options: {
+            a: "look at someone in an angry way",
+            b: "smile at someone",
+            c: "express your disgust for something",
+            d: "express your love for someone",
+          },
+          correct: "a",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'To scowl' (ভ্রূকুটি করা, মুখ গোমড়া করা) অর্থ হলো রাগ বা বিরক্তি প্রকাশ করে মুখ গোমড়া করা।</li><li>(A) 'look at someone in an angry way' (কারো দিকে রাগান্বিতভাবে তাকানো) এটি 'To scowl' এর সঠিক অর্থ।</li><li>(B) 'smile at someone' (কারো দিকে হাসা) অর্থ হলো হাসিমুখ দেখানো।</li><li>(C) 'express your disgust for something' (কোনো কিছুর প্রতি আপনার বিতৃষ্ণা প্রকাশ করা) এর অর্থ কাছাকাছি হলেও, 'scowl' মুখের অভিব্যক্তিকে সরাসরি বোঝায়।</li><li>(D) 'express your love for someone' (কারো প্রতি আপনার ভালোবাসা প্রকাশ করা) অর্থ হলো ভালোবাসা প্রকাশ করা।</li></ul>",
+        },
+        {
+          id: 34,
+          question: "Which word is a synonym for 'superfluous'?",
+          options: {
+            a: "Necessary",
+            b: "Redundant",
+            c: "Crucial",
+            d: "Essential",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Superfluous' (অতিরিক্ত, অপ্রয়োজনীয়) অর্থ হলো প্রয়োজনের অতিরিক্ত বা অপ্রয়োজনীয়।</li><li>(A) 'Necessary' (প্রয়োজনীয়) অর্থ হলো অপরিহার্য।</li><li>(B) 'Redundant' (অপ্রয়োজনীয়, অতিরিক্ত) অর্থ হলো প্রয়োজনের অতিরিক্ত বা পুনরাবৃত্ত। এটি 'Superfluous' এর সমার্থক।</li><li>(C) 'Crucial' (গুরুত্বপূর্ণ, সঙ্কটজনক) অর্থ হলো অত্যন্ত গুরুত্বপূর্ণ।</li><li>(D) 'Essential' (অত্যাবশ্যক, মৌলিক) অর্থ হলো মৌলিক বা অপরিহার্য।</li></ul>",
+        },
+        {
+          id: 35,
+          question: "What are the salient features of the new scheme?",
+          options: {
+            a: "silent",
+            b: "main",
+            c: "minor",
+            d: "stable",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রদত্ত বাক্যে 'salient features' (প্রধান বৈশিষ্ট্য) অভিব্যক্তিটির অর্থ জানতে হবে।</p><ul><li>'Salient' (প্রধান, উল্লেখযোগ্য) অর্থ হলো সবচেয়ে গুরুত্বপূর্ণ বা প্রধান।</li><li>(A) 'Silent' (নীরব) অর্থ হলো শব্দহীন।</li><li>(B) 'Main' (প্রধান) অর্থ হলো মুখ্য বা প্রধান। এটি 'salient' এর সঠিক অর্থ।</li><li>(C) 'Minor' (নগণ্য, অপ্রধান) অর্থ হলো ক্ষুদ্র বা কম গুরুত্বপূর্ণ।</li><li>(D) 'Stable' (স্থিতিশীল) অর্থ হলো সুস্থিত।</li></ul>",
+        },
+        {
+          id: 36,
+          question:
+            "\"Let us not taint ourselves in any way.\" In this sentence, 'taint' means",
+          options: {
+            a: "malicious",
+            b: "malice",
+            c: "blemish",
+            d: "germane",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রদত্ত বাক্যে 'taint' (কলঙ্কিত করা, দূষিত করা) শব্দটি একটি verb হিসেবে ব্যবহৃত হয়েছে, যার অর্থ হলো কলঙ্কিত করা বা খারাপ করা।</p><ul><li>(A) 'Malicious' (হিংসুক, বিদ্বেষপূর্ণ) একটি adjective, যার অর্থ হলো বিদ্বেষপূর্ণ বা মন্দ উদ্দেশ্যযুক্ত।</li><li>(B) 'Malice' (হিংসা, বিদ্বেষ) একটি noun, যার অর্থ হলো বিদ্বেষ বা মন্দ ইচ্ছা।</li><li>(C) 'Blemish' (কলঙ্ক, খুঁত) একটি noun, যার অর্থ হলো খুঁত বা ত্রুটি। তবে 'taint' verb হিসেবে 'blemish' করা বা কলঙ্কিত করা অর্থ প্রকাশ করে। প্রদত্ত অপশনগুলোর মধ্যে 'blemish' সবচেয়ে কাছাকাছি অর্থ বোঝায় যখন 'taint' কে noun হিসেবে ভাবা হয় অথবা এর প্রভাবকে বোঝায়। তবে, 'taint' verb হিসেবে 'to make something impure or corrupt' অর্থাৎ 'দূষিত করা' বা 'কলঙ্কিত করা' বোঝায়। তাই 'blemish' (খুঁত/কলঙ্ক) দ্বারা এর প্রভাব বোঝানো যেতে পারে।</li><li>(D) 'Germane' (প্রাসঙ্গিক) একটি adjective, যার অর্থ হলো প্রাসঙ্গিক বা উপযুক্ত।</li></ul>",
+        },
+        {
+          id: 37,
+          question: "What is the correct synonym for 'serene'?",
+          options: {
+            a: "Noisy",
+            b: "Clamorous",
+            c: "Turbulent",
+            d: "Tranquil",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Serene' (শান্ত, নির্মল) অর্থ হলো শান্ত, স্থির বা নিরিবিলি।</li><li>(A) 'Noisy' (গোলমালপূর্ণ) অর্থ হলো শব্দময় বা গোলমালপূর্ণ।</li><li>(B) 'Clamorous' (গোলমালপূর্ণ, কোলাহলপূর্ণ) অর্থ হলো উচ্চ শব্দযুক্ত বা কোলাহলপূর্ণ।</li><li>(C) 'Turbulent' (অশান্ত, বিক্ষুব্ধ) অর্থ হলো অশান্ত বা বিশৃঙ্খল।</li><li>(D) 'Tranquil' (শান্ত, নিরিবিলি) অর্থ হলো শান্ত, স্থির বা নিরিবিলি। এটি 'Serene' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 38,
+          question: "Which one is the correct antonym of 'Supercilious'?",
+          options: {
+            a: "Affable",
+            b: "Haughty",
+            c: "Disdainful",
+            d: "Wicked",
+          },
+          correct: "a",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Supercilious' (অহংকারী, দাম্ভিক) অর্থ হলো উদ্ধত, অহংকারী বা তাচ্ছিল্যপূর্ণ।</li><li>(A) 'Affable' (বন্ধুত্বপূর্ণ, অমায়িক) অর্থ হলো বন্ধুত্বপূর্ণ বা সহজলভ্য। এটি 'Supercilious' এর বিপরীত।</li><li>(B) 'Haughty' (দাম্ভিক, উদ্ধত) অর্থ হলো অহংকারী বা গর্বিত। এটি 'Supercilious' এর সমার্থক।</li><li>(C) 'Disdainful' (ঘৃণাপূর্ণ, তাচ্ছিল্যপূর্ণ) অর্থ হলো তাচ্ছিল্যপূর্ণ বা অবজ্ঞাপূর্ণ। এটি 'Supercilious' এর সমার্থক।</li><li>(D) 'Wicked' (দুষ্ট, মন্দ) অর্থ হলো মন্দ বা খারাপ।</li></ul>",
+        },
+        {
+          id: 39,
+          question: "The antonym of the word 'Somber' is-",
+          options: {
+            a: "Bright",
+            b: "Gloomy",
+            c: "Dismal",
+            d: "Dark",
+          },
+          correct: "a",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Somber' (বিষণ্ণ, অন্ধকারাচ্ছন্ন) অর্থ হলো অন্ধকারাচ্ছন্ন, বিষণ্ণ বা গম্ভীর।</li><li>(A) 'Bright' (উজ্জ্বল, প্রফুল্ল) অর্থ হলো আলোকিত বা প্রফুল্ল। এটি 'Somber' এর বিপরীত।</li><li>(B) 'Gloomy' (বিষণ্ণ, অন্ধকারাচ্ছন্ন) অর্থ হলো অন্ধকারাচ্ছন্ন বা হতাশাজনক। এটি 'Somber' এর সমার্থক।</li><li>(C) 'Dismal' (বিষণ্ণ, অন্ধকারাচ্ছন্ন) অর্থ হলো হতাশাজনক বা নিরানন্দ। এটি 'Somber' এর সমার্থক।</li><li>(D) 'Dark' (অন্ধকার) অর্থ হলো আলোহীন। এটি 'Somber' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 40,
+          question: "I am terrible at mathematics. Here 'terrible' means -",
+          options: {
+            a: "vital",
+            b: "thin",
+            c: "bad",
+            d: "dangerous",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রদত্ত বাক্যে 'terrible' (ভয়ংকর) শব্দটি গণিতে দক্ষতা বোঝাতে ব্যবহৃত হয়েছে। এই প্রেক্ষাপটে এর অর্থ জানতে হবে।</p><ul><li>'Terrible' (ভয়ংকর, খারাপ) অর্থ হলো ভয়ংকর, অত্যন্ত খারাপ বা জঘন্য। যখন কোনো বিষয়ে কেউ খারাপ হয়, তখন 'terrible at' ব্যবহার করা হয়।</li><li>(A) 'Vital' (গুরুত্বপূর্ণ) অর্থ হলো অত্যাবশ্যক বা জীবনরক্ষাকারী।</li><li>(B) 'Thin' (পাতলা) অর্থ হলো সরু বা ক্ষীণ।</li><li>(C) 'Bad' (খারাপ) অর্থ হলো অদক্ষ বা অযোগ্য। এই প্রেক্ষাপটে 'terrible' এর অর্থ 'bad' এর সাথে মিলে যায়।</li><li>(D) 'Dangerous' (বিপজ্জনক) অর্থ হলো ঝুঁকিপূর্ণ।</li></ul>",
+        },
+        {
+          id: 41,
+          question: "The opposite of the word 'Temporal' is -",
+          options: {
+            a: "Material",
+            b: "Spiritual",
+            c: "Temporary",
+            d: "Permanent",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Temporal' (পার্থিব, জাগতিক) অর্থ হলো সময় সম্পর্কিত, পার্থিব বা জাগতিক। এটি প্রায়শই আধ্যাত্মিক বা চিরন্তন ধারণার বিপরীতে ব্যবহৃত হয়।</li><li>(A) 'Material' (বস্তুগত) অর্থ হলো বস্তু সম্পর্কিত। এটি 'Temporal' এর কাছাকাছি অর্থ।</li><li>(B) 'Spiritual' (আধ্যাত্মিক) অর্থ হলো আত্মা বা ধর্ম সম্পর্কিত। এটি 'Temporal' এর বিপরীত।</li><li>(C) 'Temporary' (অস্থায়ী) অর্থ হলো স্বল্পস্থায়ী।</li><li>(D) 'Permanent' (স্থায়ী) অর্থ হলো চিরস্থায়ী।</li></ul>",
+        },
+        {
+          id: 42,
+          question: "Choose the antonym of 'Tangible'-",
+          options: {
+            a: "concrete",
+            b: "manifest",
+            c: "initial",
+            d: "abstract",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Tangible' (মূর্ত, বাস্তব) অর্থ হলো স্পর্শযোগ্য, বাস্তব বা সুনির্দিষ্ট।</li><li>(A) 'Concrete' (মূর্ত, বাস্তব) অর্থ হলো বাস্তব বা সুনির্দিষ্ট। এটি 'Tangible' এর সমার্থক।</li><li>(B) 'Manifest' (প্রকাশ্য, স্পষ্ট) অর্থ হলো স্পষ্ট বা সুস্পষ্ট। এটি 'Tangible' এর কাছাকাছি অর্থ।</li><li>(C) 'Initial' (প্রাথমিক) অর্থ হলো প্রথম বা প্রারম্ভিক।</li><li>(D) 'Abstract' (বিমূর্ত, ধারণাগত) অর্থ হলো ধারণাগত বা অস্পর্শনীয়। এটি 'Tangible' এর বিপরীত।</li></ul>",
+        },
+        {
+          id: 43,
+          question: "The antonym for 'slothful' is-",
+          options: {
+            a: "playful",
+            b: "sluggish",
+            c: "energetic",
+            d: "quarrelsome",
+          },
+          correct: "c",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Slothful' (অলস, কুঁড়ে) অর্থ হলো অলস বা কর্মবিমুখ।</li><li>(A) 'Playful' (খেলুড়ে, কৌতুকপূর্ণ) অর্থ হলো মজাদার বা খেলাধুলাপ্রিয়।</li><li>(B) 'Sluggish' (ধীর, অলস) অর্থ হলো মন্থর বা অলস। এটি 'Slothful' এর সমার্থক।</li><li>(C) 'Energetic' (কর্মঠ, উদ্যমী) অর্থ হলো কর্মঠ বা প্রাণবন্ত। এটি 'Slothful' এর বিপরীত।</li><li>(D) 'Quarrelsome' (ঝগড়াটে) অর্থ হলো ঝগড়া করতে আগ্রহী।</li></ul>",
+        },
+        {
+          id: 44,
+          question: "Choose the word opposite in meaning to 'Terse':",
+          options: {
+            a: "Concise",
+            b: "Detailed",
+            c: "Expressive",
+            d: "Descriptive",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Terse' (সংক্ষিপ্ত, সংক্ষিপ্ত ও স্পষ্ট) অর্থ হলো সংক্ষিপ্ত ও স্পষ্ট, অপ্রয়োজনীয় শব্দ বর্জিত।</li><li>(A) 'Concise' (সংক্ষিপ্ত) অর্থ হলো সংক্ষিপ্ত ও স্পষ্ট। এটি 'Terse' এর সমার্থক।</li><li>(B) 'Detailed' (বিস্তারিত) অর্থ হলো পুঙ্খানুপুঙ্খ বা বিশদ। এটি 'Terse' এর বিপরীত।</li><li>(C) 'Expressive' (প্রকাশভঙ্গিপূর্ণ) অর্থ হলো ভাবপূর্ণ।</li><li>(D) 'Descriptive' (বর্ণনামূলক) অর্থ হলো বর্ণনা দেয় এমন। এটি 'Detailed' এর কাছাকাছি অর্থ, এবং 'Terse' এর বিপরীত। তবে 'Detailed' হলো সরাসরি বিপরীত।</li></ul>",
+        },
+        {
+          id: 45,
+          question:
+            "'You look terrific in that dress!' The word 'terrific' in the above sentence means-",
+          options: {
+            a: "excellent",
+            b: "funny",
+            c: "very ugly",
+            d: "horrible",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রদত্ত বাক্যে 'terrific' (চমৎকার) শব্দটি পোশাকের প্রশংসা করতে ব্যবহৃত হয়েছে। এই প্রেক্ষাপটে এর অর্থ জানতে হবে।</p><ul><li>'Terrific' (চমৎকার, অসাধারণ) অর্থ হলো অসাধারণ, দুর্দান্ত বা চমৎকার। যদিও এর আরেকটি অর্থ 'ভয়ংকর' হতে পারে, কিন্তু বাক্যের প্রেক্ষাপটে ইতিবাচক অর্থটিই প্রযোজ্য।</li><li>(A) 'Excellent' (চমৎকার) অর্থ হলো অসাধারণ বা খুব ভালো। এটি 'terrific' এর সঠিক অর্থ এই বাক্যে।</li><li>(B) 'Funny' (মজার) অর্থ হলো হাস্যকর।</li><li>(C) 'Very ugly' (খুব কুৎসিত) অর্থ হলো খুব অসুন্দর।</li><li>(D) 'Horrible' (ভয়াবহ) অর্থ হলো ভয়ংকর বা জঘন্য।</li></ul>",
+        },
+        {
+          id: 46,
+          question: "Find out the correct synonym of 'TENUOUS’–",
+          options: {
+            a: "Vital",
+            b: "Thin",
+            c: "Careful",
+            d: "Dangerous",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Tenuous' (পাতলা, দুর্বল) অর্থ হলো পাতলা, ভঙ্গুর বা দুর্বল।</li><li>(A) 'Vital' (গুরুত্বপূর্ণ) অর্থ হলো অত্যাবশ্যক।</li><li>(B) 'Thin' (পাতলা) অর্থ হলো সরু বা ক্ষীণ। এটি 'Tenuous' এর সমার্থক।</li><li>(C) 'Careful' (সতর্ক) অর্থ হলো সাবধানী।</li><li>(D) 'Dangerous' (বিপজ্জনক) অর্থ হলো ঝুঁকিপূর্ণ।</li></ul>",
+        },
+        {
+          id: 47,
+          question: "The verb 'Succumb' means-",
+          options: {
+            a: "Achieve",
+            b: "Submit",
+            c: "Win",
+            d: "Conquer",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Succumb' (বশ্যতা স্বীকার করা, নতি স্বীকার করা) অর্থ হলো কোনো চাপ বা প্রলোভনের কাছে নতি স্বীকার করা বা পরাজয় বরণ করা।</li><li>(A) 'Achieve' (অর্জন করা) অর্থ হলো সফল হওয়া।</li><li>(B) 'Submit' (বশ্যতা স্বীকার করা) অর্থ হলো বশ্যতা স্বীকার করা বা জমা দেওয়া। এটি 'Succumb' এর সমার্থক।</li><li>(C) 'Win' (জয় করা) অর্থ হলো বিজয়ী হওয়া।</li><li>(D) 'Conquer' (জয় করা, বশীভূত করা) অর্থ হলো জয় করা বা দখল করা।</li></ul>",
+        },
+        {
+          id: 48,
+          question: "Sporadic means-",
+          options: {
+            a: "Consistent",
+            b: "Uniform",
+            c: "Frequent",
+            d: "Scattered",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Sporadic' (অনিয়মিত, বিক্ষিপ্ত) অর্থ হলো অনিয়মিত বা বিচ্ছিন্নভাবে ঘটে যাওয়া।</li><li>(A) 'Consistent' (ধারাবাহিক, সঙ্গতিপূর্ণ) অর্থ হলো অবিচ্ছিন্ন বা একরকম।</li><li>(B) 'Uniform' (একই রকম, অভিন্ন) অর্থ হলো অভিন্ন বা সমান।</li><li>(C) 'Frequent' (ঘন ঘন) অর্থ হলো প্রায়শই ঘটে যাওয়া।</li><li>(D) 'Scattered' (বিক্ষিপ্ত, ছড়ানো) অর্থ হলো ছড়িয়ে ছিটিয়ে থাকা বা বিচ্ছিন্ন। এটি 'Sporadic' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 49,
+          question: "What is the meaning of the word 'Scuttle'?",
+          options: {
+            a: "To tease",
+            b: "Abandon",
+            c: "Pile up",
+            d: "Gossip",
+          },
+          correct: "b",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Scuttle' (বাতিল করা, ডুবিয়ে দেওয়া) এর দুটি প্রধান অর্থ আছে: ১. দ্রুত দৌড়ে যাওয়া; ২. ইচ্ছাকৃতভাবে কোনো কিছু বাতিল করা বা ডুবিয়ে দেওয়া (যেমন একটি জাহাজ)। এখানে অপশনগুলো অনুযায়ী দ্বিতীয় অর্থটি বেশি প্রযোজ্য।</li><li>(A) 'To tease' (বিরক্ত করা, জ্বালাতন করা) অর্থ হলো ঠাট্টা করা বা বিরক্ত করা।</li><li>(B) 'Abandon' (ত্যাগ করা, পরিত্যাগ করা) অর্থ হলো পরিত্যাগ করা বা ছেড়ে দেওয়া। এটি 'Scuttle' এর 'বাতিল করা' বা 'ডুবিয়ে দেওয়া' অর্থের সাথে সামঞ্জস্যপূর্ণ।</li><li>(C) 'Pile up' (জমা করা) অর্থ হলো স্তূপ করা বা জমা করা।</li><li>(D) 'Gossip' (গসিপ করা, গুজব ছড়ানো) অর্থ হলো আড্ডা দেওয়া বা গুজব ছড়ানো।</li></ul>",
+        },
+        {
+          id: 50,
+          question: "What is the meaning of the word \"Stanch'?",
+          options: {
+            a: "To reinforce",
+            b: "Be weak",
+            c: "Smooth out",
+            d: "Put an end to",
+          },
+          correct: "d",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Stanch' (রক্তপাত বন্ধ করা, থামানো) অর্থ হলো রক্তপাত বন্ধ করা বা কোনো প্রবাহ থামানো।</li><li>(A) 'To reinforce' (শক্তিশালী করা) অর্থ হলো শক্তিশালী করা বা সমর্থন করা।</li><li>(B) 'Be weak' (দুর্বল হওয়া) অর্থ হলো দুর্বল থাকা।</li><li>(C) 'Smooth out' (মসৃণ করা, সহজ করা) অর্থ হলো মসৃণ করা বা সমস্যা সমাধান করা।</li><li>(D) 'Put an end to' (শেষ করা) অর্থ হলো কোনো কিছুর সমাপ্তি ঘটানো বা থামানো। এটি 'Stanch' এর অর্থের সাথে সামঞ্জস্যপূর্ণ।</li></ul>",
+        },
+        {
+          id: 51,
+          question: "What is the meaning of the word 'Sequence'?",
+          options: {
+            a: "To follow",
+            b: "Round up",
+            c: "Withdraw",
+            d: "Question closely",
+          },
+          correct: "a",
+          explanation:
+            "<p>শব্দের অর্থ জানা থাকলে Synonym বা Antonym খুঁজে বের করা সহজ হয়।</p><ul><li>'Sequence' (ক্রম, ধারা) অর্থ হলো একটি নির্দিষ্ট ক্রম বা ধারা। এটি একটি noun হিসেবে ব্যবহৃত হয়। যখন এটি verb হিসেবে ব্যবহৃত হয়, তখন এর অর্থ হয় 'ক্রম অনুসরণ করা'।</li><li>(A) 'To follow' (অনুসরণ করা) অর্থ হলো পেছনে যাওয়া বা ধারাবাহিকতা বজায় রাখা। এটি 'Sequence' এর verb রূপের সাথে সামঞ্জস্যপূর্ণ।</li><li>(B) 'Round up' (একত্রিত করা) একটি phrasal verb, যার অর্থ হলো জড়ো করা।</li><li>(C) 'Withdraw' (প্রত্যাহার করা) অর্থ হলো তুলে নেওয়া বা সরে আসা।</li><li>(D) 'Question closely' (খুব কাছ থেকে প্রশ্ন করা) অর্থ হলো বিস্তারিত জিজ্ঞাসাবাদ করা।</li></ul>",
+        },
+        {
+          id: 52,
+          question:
+            "___ the rise in unemployment in cities, more and more people continue to move to urban centres.",
+          options: {
+            a: "In addition to",
+            b: "Despite",
+            c: "Due to",
+            d: "Even though",
+          },
+          correct: "b",
+          explanation:
+            "<p>বাক্যটির অর্থ অনুযায়ী সঠিক Preposition বসাতে হবে। বাক্যটির অর্থ হলো: শহরে বেকারত্ব বৃদ্ধি <b>সত্ত্বেও</b>, আরও বেশি মানুষ শহরাঞ্চলে চলে আসছে।</p><ul><li>(A) 'In addition to' (এছাড়াও) অর্থ হলো অতিরিক্ত কিছু।</li><li>(B) 'Despite' (সত্ত্বেও) অর্থ হলো কোনো কিছু থাকা সত্ত্বেও। এটি বাক্যের অর্থ অনুযায়ী সঠিক।</li><li>(C) 'Due to' (কারণে) অর্থ হলো কোনো কারণের জন্য।</li><li>(D) 'Even though' (যদিও) এটি একটি conjunction, যা বাক্যকে যুক্ত করে, কিন্তু এখানে prepositional phrase প্রয়োজন।</li></ul>",
+        },
+        {
+          id: 53,
+          question: "___ living in the water, whales breathe air.",
+          options: {
+            a: "Despite",
+            b: "For",
+            c: "Though",
+            d: "Now",
+          },
+          correct: "a",
+          explanation:
+            "<p>বাক্যটির অর্থ অনুযায়ী সঠিক Preposition বসাতে হবে। বাক্যটির অর্থ হলো: পানিতে বসবাস <b>সত্ত্বেও</b>, তিমিরা বাতাস গ্রহণ করে।</p><ul><li>(A) 'Despite' (সত্ত্বেও) অর্থ হলো কোনো কিছু থাকা সত্ত্বেও। এটি বাক্যের অর্থ অনুযায়ী সঠিক, কারণ এটি 'living in the water' এর সাথে বিপরীত অর্থ প্রকাশ করে।</li><li>(B) 'For' (জন্য) অর্থ হলো কোনো কিছুর জন্য।</li><li>(C) 'Though' (যদিও) এটি একটি conjunction, যা বাক্যকে যুক্ত করে, কিন্তু এখানে prepositional phrase প্রয়োজন।</li><li>(D) 'Now' (এখন) একটি adverb, যা সময় নির্দেশ করে।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
